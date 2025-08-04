@@ -16,9 +16,13 @@
 using namespace std;
 
 const int dragThreshold = 1; // min pixels for drag re-render
+const int originalSize = 1;
 
 int ScreenWidth = 720;
 int ScreenHeight = 480;
+
+sf::Vector2<long double> prevOrigin;
+sf::Vector2<long double> prevDelta;
 
 sf::Image pictures({ScreenWidth, ScreenHeight}, sf::Color::Black);
 sf::Texture MapTexture(pictures);
@@ -42,17 +46,17 @@ int main()
 {
     bool isDragging = false;
     sf::Vector2i dragStartMouse;
-    sf::Vector2<long double> dragStartCenter;
+    sf::Vector2<float> dragStartCenter;
 
-    sf::Vector2<long double> pan = { 0.0, 0.0 };
-    sf::Vector2<long double> prevPan = { 0.0, 0.0 };
+    sf::Vector2<float> pan = { 1.0, 1.0 };
+    sf::Vector2<float> prevPan = { 1.0, 1.0 };
 
-    long double basePanSpeed = 0.01f;
-    long double panStep = 0.0;
+    float basePanSpeed = 0.1f;
+    float panStep = 0.0;
 
-    long double prevZoom = 0.9;
-    long double zoom = 1.0;
-    long double baseZoom = 0.9;
+    float prevZoom = 0.9;
+    float zoom = 1.0;
+    float baseZoom = 0.9;
     int zoomSteps = -8;
 
     sf::Clock clock;
@@ -228,107 +232,55 @@ int main()
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         {
-            pan.y += panStep;
+            pan.y -= panStep;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
         {
-            pan.y -= panStep;
+            pan.y += panStep;
         }
 
 
         if (isDragging)
         {
             sf::Vector2i currentMouse = sf::Mouse::getPosition(window);
-            sf::Vector2i mouseDelta = dragStartMouse - currentMouse; // reversed direction (drag moves view)
+            sf::Vector2i mouseDelta = currentMouse - dragStartMouse;
 
             if (std::abs(mouseDelta.x) >= dragThreshold || std::abs(mouseDelta.y) >= dragThreshold)
             {
-                long double aspectRatio = (long double)(window.getSize().x) / (long double)(window.getSize().y);
-                long double scaledZoomX = zoom * aspectRatio;
-                long double scaledZoomY = zoom;
+                sf::Vector2f worldStart = window.mapPixelToCoords(dragStartMouse);
+                sf::Vector2f worldNow   = window.mapPixelToCoords(currentMouse);
 
-                sf::Vector2<long double> pixelDelta =
-                {
-                    scaledZoomX / (long double)(window.getSize().x),
-                    scaledZoomY / (long double)(window.getSize().y)
-                };
+                sf::Vector2f worldDelta = worldStart - worldNow;
 
-                long double temp = -1;
-
-                // Convert pixel delta to complex space delta
-                sf::Vector2<long double> complexDelta =
-                {
-                    mouseDelta.x * pixelDelta.x,
-                    mouseDelta.y * temp * pixelDelta.y
-                };
-
-                pan = dragStartCenter + complexDelta;
-                dragStartMouse = currentMouse;
-                dragStartCenter = pan;
+                pan = dragStartCenter + worldDelta;
             }
         }
 
-        long double aspectRatio = (long double)(window.getSize().x) / (long double)(window.getSize().y);
 
-        sf::Vector2<long double> delta =
-        {
-            zoom * aspectRatio / (long double)(window.getSize().x),
-            //zoom / double(window.getSize().x),
-            zoom / double(window.getSize().y)
-        };
+        auto now = std::chrono::steady_clock::now();
+        deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+        lastUpdate = now;
 
-        sf::Vector2<long double> origin =
-        {
-            pan.x - delta.x * (long double)(window.getSize().x) * 0.5,
-            pan.y - delta.y * (long double)(window.getSize().y) * 0.5
-        };
+        physics P;
 
-        ScreenWidth = window.getSize().x;
-        ScreenHeight = window.getSize().y;
+        P.calculateForces(particles,deltaTime);
 
-        fullscreenQuad.setOrigin({ScreenWidth / 2.f, ScreenHeight / 2.f});
-        fullscreenQuad.setScale({1.0f, -1.0f});
-        fullscreenQuad.setPosition({ScreenWidth / 2.f, ScreenHeight / 2.f});
-/*
-        float scaleX = static_cast<float>(prevDelta.x / delta.x);
-        float scaleY = static_cast<float>(prevDelta.y / delta.y);
-
-        // Pixel offset caused by panning and zoom
-        sf::Vector2f offset =
-        {
-            static_cast<float>((prevOrigin.x - origin.x) / delta.x
-                               - 0.5f * ScreenWidth  * (1.f - scaleX)),
-            static_cast<float>((prevOrigin.y - origin.y) / delta.y
-                               - 0.5f * ScreenHeight * (1.f - scaleY))
-        };
-
-        fullscreenQuad.setScale({scaleX, -scaleY});
-        fullscreenQuad.setPosition(
-        {
-            ScreenWidth / 2.f + offset.x,
-            ScreenHeight / 2.f - offset.y
-        });
-
-*/
-    auto now = std::chrono::steady_clock::now();
-    deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
-    lastUpdate = now;
-
-    physics P;
-
-    P.calculateForces(particles,deltaTime);
-
-    renderQuad.clear();
-    for(int i = 0; i<conf::particles; i++){
-        particles[i].move(deltaTime);
-        sf::VertexArray quad = particles[i].generateQuad();
-        for(int j = 0; j <quad.getVertexCount(); j++){
-            renderQuad.append(quad[j]);
+        renderQuad.clear();
+        for(int i = 0; i<conf::particles; i++){
+            particles[i].move(deltaTime);
+            sf::VertexArray quad = particles[i].generateQuad();
+            for(int j = 0; j <quad.getVertexCount(); j++){
+                renderQuad.append(quad[j]);
+            }
         }
-    }
 
 
         window.clear();
+
+        sf::View view = window.getView();
+        view.setCenter(pan);
+        view.setSize({ScreenWidth * zoom, ScreenHeight * zoom});
+        window.setView(view);
 
         window.draw(fullscreenQuad);
 

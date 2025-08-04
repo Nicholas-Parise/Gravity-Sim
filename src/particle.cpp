@@ -58,7 +58,7 @@ void particle::move(float time){
 }
 
 float particle::getMass(){
-return this->mass;
+    return this->mass;
 }
 
 sf::VertexArray particle::generateQuad(){
