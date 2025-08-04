@@ -7,6 +7,7 @@ class particle
 {
     public:
         particle();
+        particle(float x, float y);
         virtual ~particle();
         float calcDistance(particle p);
         float calcDirection(particle p);
@@ -14,6 +15,8 @@ class particle
         void setPosition(float x, float y);
         void move(float time);
         sf::VertexArray generateQuad();
+        float getMass();
+
 
         float mass;
         float density;

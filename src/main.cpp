@@ -11,7 +11,7 @@
 
 #include "configuration.h"
 #include "particle.h"
-
+#include "physics.h"
 
 using namespace std;
 
@@ -55,14 +55,22 @@ int main()
     long double baseZoom = 0.9;
     int zoomSteps = -8;
 
+    sf::Clock clock;
+
     std::vector<particle> particles(conf::particles);
 
-    sf::VertexArray renderQuad(sf::PrimitiveType::LineStrip, 4*conf::particles);
+    sf::VertexArray renderQuad(sf::PrimitiveType::Triangles, 6*conf::particles);
 
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(i*10,i*3);
     }
 
+
+    std::chrono::steady_clock::time_point lastUpdate;
+    float deltaTime;
+    auto now = std::chrono::steady_clock::now();
+    deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+    lastUpdate = now;
 
 
     sf::RenderWindow window(sf::VideoMode({ScreenWidth, ScreenHeight}), "Gravity");
@@ -96,7 +104,7 @@ int main()
     crosshair.setOrigin({12.5f, 12.5f});
     crosshair.setPosition({ScreenWidth / 2.f, ScreenHeight / 2.f});
 
-    sf::Clock clock;
+
 
     const sf::Font font("assets/Arial.ttf");
 
@@ -302,15 +310,20 @@ int main()
         });
 
 */
+    auto now = std::chrono::steady_clock::now();
+    deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+    lastUpdate = now;
 
+    physics P;
 
+    P.calculateForces(particles,deltaTime);
 
     renderQuad.clear();
     for(int i = 0; i<conf::particles; i++){
-        particles[i].move(1.0f);
-        sf::VertexArray temp = particles[i].generateQuad();
-        for(int j = 0; j <4; j++){
-            renderQuad.append(temp[j]);
+        particles[i].move(deltaTime);
+        sf::VertexArray quad = particles[i].generateQuad();
+        for(int j = 0; j <quad.getVertexCount(); j++){
+            renderQuad.append(quad[j]);
         }
     }
 
