@@ -8,6 +8,7 @@
 #include <mutex>
 #include <thread>
 #include <atomic>
+#include <cstdlib>
 
 #include "configuration.h"
 #include "particle.h"
@@ -66,9 +67,9 @@ int main()
     sf::VertexArray renderQuad(sf::PrimitiveType::Triangles, 6*conf::particles);
 
     for(int i = 0; i<conf::particles; i++){
-        particles[i].setPosition(i*10,i*3);
+        particles[i].setPosition(rand()%ScreenWidth,rand()%ScreenHeight);
+        particles[i].setMass(rand()%10);
     }
-
 
     std::chrono::steady_clock::time_point lastUpdate;
     float deltaTime;
@@ -107,7 +108,6 @@ int main()
     crosshair.setPoint(11, sf::Vector2f(0, 13));
     crosshair.setOrigin({12.5f, 12.5f});
     crosshair.setPosition({ScreenWidth / 2.f, ScreenHeight / 2.f});
-
 
 
     const sf::Font font("assets/Arial.ttf");
@@ -271,6 +271,10 @@ int main()
             sf::VertexArray quad = particles[i].generateQuad();
             for(int j = 0; j <quad.getVertexCount(); j++){
                 renderQuad.append(quad[j]);
+            }
+            // DEBUG
+            if (std::isnan(particles[i].position.x) || std::isnan(particles[i].position.y)) {
+                std::cout << "NaN at index " << i << ": " << particles[i].position.x << ", " << particles[i].position.y << std::endl;
             }
         }
 

@@ -12,11 +12,13 @@ class particle
         float calcDistance(particle p);
         float calcDirection(particle p);
         void updateVector(float force, float direction, float time);
-        void setPosition(float x, float y);
         void move(float time);
         sf::VertexArray generateQuad();
-        float getMass();
 
+        void setPosition(float x, float y);
+        float getMass();
+        void setMass(float mass);
+        void setspeed(float x, float y);
 
         float mass;
         float density;
