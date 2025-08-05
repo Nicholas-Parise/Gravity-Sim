@@ -9,6 +9,7 @@ class particle
         particle();
         particle(float x, float y);
         virtual ~particle();
+
         float calcDistance(particle p);
         float calcDirection(particle p);
         void updateVector(float force, float direction, float time);
@@ -26,6 +27,7 @@ class particle
 
         float direction; // in radians
         sf::Vector2<float> velocity;
+        sf::Vector2<float> acceleration;
 
         sf::Vector2<float> position;
         sf::Vector2<float> temp_position;
@@ -33,6 +35,8 @@ class particle
     protected:
 
     private:
+        // used to sum up all the acceleration so we don't over write anything
+        sf::Vector2<float> temp_acceleration;
 };
 
 #endif // PARTICLE_H

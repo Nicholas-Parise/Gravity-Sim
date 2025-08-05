@@ -50,15 +50,15 @@ int main()
     sf::Vector2<float> dragStartCenter;
 
     sf::Vector2<float> pan = { 1.0, 1.0 };
-    sf::Vector2<float> prevPan = { 1.0, 1.0 };
 
     float basePanSpeed = 0.1f;
     float panStep = 0.0;
 
-    float prevZoom = 0.9;
     float zoom = 1.0;
     float baseZoom = 0.9;
     int zoomSteps = -8;
+
+    physics P;
 
     sf::Clock clock;
 
@@ -160,12 +160,10 @@ int main()
                     {
 
                         zoomSteps++;
-                        prevZoom = zoom;
                     }
                     else
                     {
                         zoomSteps--;
-                        prevZoom = zoom;
                     }
                     break;
                 case sf::Mouse::Wheel::Horizontal:
@@ -210,12 +208,10 @@ int main()
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Add))
         {
             zoomSteps++;
-            prevZoom = zoom;
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Subtract))
         {
             zoomSteps--;
-            prevZoom = zoom;
         }
 
 
@@ -260,8 +256,6 @@ int main()
         auto now = std::chrono::steady_clock::now();
         deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
         lastUpdate = now;
-
-        physics P;
 
         P.calculateForces(particles,deltaTime);
 

@@ -41,13 +41,11 @@ void particle::setMass(float mass){
 
 void particle::setspeed(float x, float y){
 
-    if(x > conf::maxSpeed){
-        x = conf::maxSpeed;
-    }
-    if(y > conf::maxSpeed){
-        y = conf::maxSpeed;
-    }
+    float speed = sqrt(x * x + y * y);
 
+    if(speed < conf::minSpeed){
+        return;
+    }
     this->velocity.x = x;
     this->velocity.y = y;
 }

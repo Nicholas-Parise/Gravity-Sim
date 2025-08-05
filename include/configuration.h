@@ -5,9 +5,10 @@
 
 namespace conf{
 
-constexpr float timeScale = 500.0f;
-constexpr float G = 0.005f;
+constexpr float timeScale = 100.0f;
+constexpr float G = 0.0005f;
 constexpr double PI = 3.14159265358979323846;
+constexpr float minSpeed = 0.00001f;
 constexpr float maxSpeed = 1000.0f;
 
 constexpr float maxY = 4000.0f;
