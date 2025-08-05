@@ -39,6 +39,13 @@ void particle::setMass(float mass){
     this->width = mass;
 }
 
+
+
+void particle::resetAcceleration(){
+    this->temp_acceleration = {0,0};
+}
+
+
 void particle::setspeed(float x, float y){
 
     float speed = sqrt(x * x + y * y);
@@ -63,37 +70,39 @@ float particle::calcDirection(particle p){
     return atan2(p.position.y - this->position.y, p.position.x - this->position.x);
 }
 
-void particle::updateVector(float force, float direction, float time){
-
-if (!std::isfinite(force) || !std::isfinite(direction)) return;
+void particle::addAcceleration(float force, float direction) {
+    if (!std::isfinite(force) || !std::isfinite(direction)) return;
 
     float acc = force / this->mass;
-    float accX = acc * cos(direction);
-    float accY = acc * sin(direction);
-
-    float dt = time * conf::timeScale;
-
-    if (!std::isfinite(accX) || !std::isfinite(accY) || !std::isfinite(dt)) return;
-
-    setspeed(this->velocity.x + accX * dt, this->velocity.y + accY * dt);
+    this->temp_acceleration += {
+        acc * cos(direction),
+        acc * sin(direction)
+    };
 }
 
-void particle::move(float time){
-    this->position.x += this->velocity.x * time * conf::timeScale;
-    this->position.y += this->velocity.y * time * conf::timeScale;
+void particle::updateVelocity(float dt) {
+    this->velocity += 0.5f * (this->acceleration + this->temp_acceleration) * dt;
+    this->velocity -= normalize(this->velocity) * (conf::dragCoeff * length(this->velocity) * dt);
+    this->acceleration = this->temp_acceleration;
+}
+
+
+void particle::move(float dt){
+
+    this->position += this->velocity * dt + 0.5f * this->acceleration * dt * dt;
 
     if(this->position.x > conf::maxX){
-        this->position.x = conf::maxX;
+        this->position.x = conf::maxX * -1;
     }
     if(this->position.x < conf::maxX * -1){
-        this->position.x = conf::maxX * -1;
+        this->position.x = conf::maxX;
     }
 
     if(this->position.y > conf::maxY){
-        this->position.y = conf::maxY;
+        this->position.y = conf::maxY * -1;
     }
     if(this->position.y < conf::maxY * -1){
-        this->position.y = conf::maxY * -1;
+        this->position.y = conf::maxY;
     }
 }
 
@@ -119,3 +128,13 @@ sf::VertexArray particle::generateQuad(){
     return quad;
 }
 
+
+float particle::length(const sf::Vector2f& v) {
+    return std::sqrt(v.x * v.x + v.y * v.y);
+}
+
+sf::Vector2f particle::normalize(const sf::Vector2f& v) {
+    float len = length(v);
+    if (len == 0) return {0.f, 0.f};
+    return v / len;
+}

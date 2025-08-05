@@ -51,7 +51,7 @@ int main()
 
     sf::Vector2<float> pan = { 1.0, 1.0 };
 
-    float basePanSpeed = 0.1f;
+    float basePanSpeed = 20.0f;
     float panStep = 0.0;
 
     float zoom = 1.0;
@@ -69,7 +69,10 @@ int main()
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%ScreenWidth,rand()%ScreenHeight);
         particles[i].setMass(rand()%10);
+        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
     }
+
+    particles[0].setMass(100);
 
     std::chrono::steady_clock::time_point lastUpdate;
     float deltaTime;
@@ -261,7 +264,7 @@ int main()
 
         renderQuad.clear();
         for(int i = 0; i<conf::particles; i++){
-            particles[i].move(deltaTime);
+ //           particles[i].move(deltaTime);
             sf::VertexArray quad = particles[i].generateQuad();
             for(int j = 0; j <quad.getVertexCount(); j++){
                 renderQuad.append(quad[j]);

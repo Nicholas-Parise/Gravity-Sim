@@ -10,9 +10,14 @@ class particle
         particle(float x, float y);
         virtual ~particle();
 
+        sf::Vector2f normalize(const sf::Vector2f& v);
+        float length(const sf::Vector2f& v);
+
         float calcDistance(particle p);
         float calcDirection(particle p);
-        void updateVector(float force, float direction, float time);
+        void updateVelocity(float dt);
+        void addAcceleration(float force, float direction);
+
         void move(float time);
         sf::VertexArray generateQuad();
 
@@ -20,6 +25,8 @@ class particle
         float getMass();
         void setMass(float mass);
         void setspeed(float x, float y);
+
+        void resetAcceleration();
 
         float mass;
         float density;
