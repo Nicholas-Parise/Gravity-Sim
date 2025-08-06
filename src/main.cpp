@@ -17,17 +17,12 @@
 using namespace std;
 
 const int dragThreshold = 1; // min pixels for drag re-render
-const int originalSize = 1;
 
 int ScreenWidth = 720;
 int ScreenHeight = 480;
 
 sf::Vector2<long double> prevOrigin;
 sf::Vector2<long double> prevDelta;
-
-sf::Image pictures({ScreenWidth, ScreenHeight}, sf::Color::Black);
-sf::Texture MapTexture(pictures);
-sf::Sprite Background(MapTexture);
 
 void textUpdater(sf::Text &text, long double value, string header){
 
@@ -60,8 +55,6 @@ int main()
 
     physics P;
 
-    sf::Clock clock;
-
     std::vector<particle> particles(conf::particles);
 
     sf::VertexArray renderQuad(sf::PrimitiveType::Triangles, 6*conf::particles);
@@ -69,7 +62,7 @@ int main()
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%ScreenWidth,rand()%ScreenHeight);
         particles[i].setMass(rand()%10);
-        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
+        //particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
     }
 
     particles[0].setMass(100);
@@ -255,6 +248,8 @@ int main()
             }
         }
 
+
+        //------
 
         auto now = std::chrono::steady_clock::now();
         deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;

@@ -1,6 +1,7 @@
 #include "particle.h"
 #include "configuration.h"
 #include <cmath>
+#include <iostream>
 
 particle::particle(float x, float y)
 {
@@ -82,7 +83,7 @@ void particle::addAcceleration(float force, float direction) {
 
 void particle::updateVelocity(float dt) {
     this->velocity += 0.5f * (this->acceleration + this->temp_acceleration) * dt;
-    this->velocity -= normalize(this->velocity) * (conf::dragCoeff * length(this->velocity) * dt);
+    this->velocity -= normalize(this->velocity) * (conf::dragCoeff * length(this->velocity) * dt); // add drag
     this->acceleration = this->temp_acceleration;
 }
 
@@ -118,12 +119,15 @@ sf::VertexArray particle::generateQuad(){
 
     sf::VertexArray quad(sf::PrimitiveType::Triangles, 6);
     quad[0].position = sf::Vector2f(x - half, y - half);
+    quad[0].color = {linearInterpolation(length(this->velocity))};
     quad[1].position = sf::Vector2f(x + half, y - half);
     quad[2].position = sf::Vector2f(x + half, y + half);
 
     quad[3].position = sf::Vector2f(x + half, y + half);
     quad[4].position = sf::Vector2f(x - half, y + half);
+
     quad[5].position = sf::Vector2f(x - half, y - half);
+    quad[5].color = {linearInterpolation(length(this->velocity))};
 
     return quad;
 }
@@ -138,3 +142,21 @@ sf::Vector2f particle::normalize(const sf::Vector2f& v) {
     if (len == 0) return {0.f, 0.f};
     return v / len;
 }
+
+
+
+sf::Color particle::linearInterpolation(float speed) {
+
+    sf::Color color1 = sf::Color::White;
+    sf::Color color2 = sf::Color::Red;
+
+    float normalize = speed / 50.0;
+    if (normalize > 1.0f) normalize = 1.0f;
+
+    return sf::Color(
+        color1.r + normalize * (color2.r - color1.r),
+        color1.g + normalize * (color2.g - color1.g),
+        color1.b + normalize * (color2.b - color1.b)
+    );
+}
+

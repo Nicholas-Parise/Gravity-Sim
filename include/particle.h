@@ -3,6 +3,7 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
+
 class particle
 {
     public:
@@ -25,6 +26,8 @@ class particle
         float getMass();
         void setMass(float mass);
         void setspeed(float x, float y);
+
+        sf::Color linearInterpolation(float speed);
 
         void resetAcceleration();
 
