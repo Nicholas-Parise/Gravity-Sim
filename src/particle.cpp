@@ -36,8 +36,8 @@ void particle::setMass(float mass){
     if(mass < 0.1){
         mass = 0.1;
     }
-    this->mass = mass;
-    this->width = mass;
+    this->mass = mass*10.0;
+    this->width = mass/ 2.0;
 }
 
 

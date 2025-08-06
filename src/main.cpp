@@ -13,16 +13,17 @@
 #include "configuration.h"
 #include "particle.h"
 #include "physics.h"
+#include "UserInput.h"
 
 using namespace std;
-
-const int dragThreshold = 1; // min pixels for drag re-render
 
 int ScreenWidth = 720;
 int ScreenHeight = 480;
 
-sf::Vector2<long double> prevOrigin;
-sf::Vector2<long double> prevDelta;
+std::thread physicsWorker;
+std::mutex physicsMutex;
+std::atomic<float> deltaTime = 0.016f; // 1/60
+bool threadRunning = true;
 
 void textUpdater(sf::Text &text, long double value, string header){
 
@@ -35,6 +36,22 @@ void textUpdater(sf::Text &text, long double value, string header){
     }
    // std::string varAsString = std::to_string(value);
     text.setString(header+ss.str());
+}
+
+
+void physicsThread(physics &P, std::vector<particle> &particles){
+    threadRunning = true;
+    physicsWorker = std::thread([&]()
+    {
+        while (threadRunning){
+            float dt = deltaTime.load();
+            {
+                //std::lock_guard<std::mutex> lock(physicsMutex);
+                P.calculateForces(particles,dt);
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
 }
 
 
@@ -53,6 +70,8 @@ int main()
     float baseZoom = 0.9;
     int zoomSteps = -8;
 
+    UserInput UI;
+
     physics P;
 
     std::vector<particle> particles(conf::particles);
@@ -62,15 +81,19 @@ int main()
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%ScreenWidth,rand()%ScreenHeight);
         particles[i].setMass(rand()%10);
-        //particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
+        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
     }
 
-    particles[0].setMass(100);
+    particles[0].setMass(200);
+
+
+    physicsThread(P, particles);
+
 
     std::chrono::steady_clock::time_point lastUpdate;
-    float deltaTime;
+    float dt;
     auto now = std::chrono::steady_clock::now();
-    deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+    dt = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
     lastUpdate = now;
 
 
@@ -124,7 +147,8 @@ int main()
 
             if (event->is<sf::Event::Closed>())
             {
-             //   if (renderThread.joinable()) renderThread.join();
+                threadRunning = false;
+                if (physicsWorker.joinable()) physicsWorker.join();
                 return 0;
             }
             if (const auto* resized = event->getIf<sf::Event::Resized>())
@@ -145,121 +169,24 @@ int main()
                 crosshair.setPosition({ScreenWidth / 2.f, ScreenHeight / 2.f});
             }
 
-            if (const auto* mouseWheelScrolled = event->getIf<sf::Event::MouseWheelScrolled>())
-            {
-                switch (mouseWheelScrolled->wheel)
-                {
-                case sf::Mouse::Wheel::Vertical:
-                    // std::cout << "wheel type: vertical" << std::endl;
-
-                    if(mouseWheelScrolled->delta >0)
-                    {
-
-                        zoomSteps++;
-                    }
-                    else
-                    {
-                        zoomSteps--;
-                    }
-                    break;
-                case sf::Mouse::Wheel::Horizontal:
-                    //std::cout << "wheel type: horizontal" << std::endl;
-                    break;
-                }
-                //std::cout << "wheel movement: " << mouseWheelScrolled->delta << std::endl;
-                //std::cout << "mouse x: " << mouseWheelScrolled->position.x << std::endl;
-                //std::cout << "mouse y: " << mouseWheelScrolled->position.y << std::endl;
-            }
-
-
-            if (const auto* mouseButtonPressed = event->getIf<sf::Event::MouseButtonPressed>())
-            {
-                if (mouseButtonPressed->button == sf::Mouse::Button::Left)
-                {
-                    //std::cout << "the left button was pressed" << std::endl;
-                    //std::cout << "mouse x: " << mouseButtonPressed->position.x << std::endl;
-                    //std::cout << "mouse y: " << mouseButtonPressed->position.y << std::endl;
-
-                    isDragging = true;
-                    dragStartMouse = sf::Mouse::getPosition(window);
-                    dragStartCenter = pan; // the center when you first clicked
-
-                }
-            }
-
-
-            if (const auto* MouseButtonReleased = event->getIf<sf::Event::MouseButtonReleased>())
-            {
-                if (MouseButtonReleased->button == sf::Mouse::Button::Left)
-                {
-                    //std::cout << "the left button was released" << std::endl;
-                    //std::cout << "mouse x: " << MouseButtonReleased->position.x << std::endl;
-                    //std::cout << "mouse y: " << MouseButtonReleased->position.y << std::endl;
-                    isDragging = false;
-                }
-            }
+            UI.handleMouse(event,window);
         }
-
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Add))
-        {
-            zoomSteps++;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Subtract))
-        {
-            zoomSteps--;
-        }
-
-
-        zoom = pow(baseZoom, zoomSteps);
-        panStep = basePanSpeed * zoom;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
-        {
-            pan.x -= panStep;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
-        {
-            pan.x += panStep;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-        {
-            pan.y -= panStep;
-        }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-        {
-            pan.y += panStep;
-        }
-
-
-        if (isDragging)
-        {
-            sf::Vector2i currentMouse = sf::Mouse::getPosition(window);
-            sf::Vector2i mouseDelta = currentMouse - dragStartMouse;
-
-            if (std::abs(mouseDelta.x) >= dragThreshold || std::abs(mouseDelta.y) >= dragThreshold)
-            {
-                sf::Vector2f worldStart = window.mapPixelToCoords(dragStartMouse);
-                sf::Vector2f worldNow   = window.mapPixelToCoords(currentMouse);
-
-                sf::Vector2f worldDelta = worldStart - worldNow;
-
-                pan = dragStartCenter + worldDelta;
-            }
-        }
-
 
         //------
 
         auto now = std::chrono::steady_clock::now();
-        deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+        dt = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
         lastUpdate = now;
 
-        P.calculateForces(particles,deltaTime);
+        deltaTime.store(dt);
+
+        UI.handleKeyboard(window,dt);
+
+        // moved physics to thread
+        //P.calculateForces(particles,dt);
 
         renderQuad.clear();
         for(int i = 0; i<conf::particles; i++){
- //           particles[i].move(deltaTime);
             sf::VertexArray quad = particles[i].generateQuad();
             for(int j = 0; j <quad.getVertexCount(); j++){
                 renderQuad.append(quad[j]);
@@ -270,12 +197,11 @@ int main()
             }
         }
 
-
         window.clear();
 
         sf::View view = window.getView();
-        view.setCenter(pan);
-        view.setSize({ScreenWidth * zoom, ScreenHeight * zoom});
+        view.setCenter(UI.getPan());
+        view.setSize({ScreenWidth * UI.getZoom(), ScreenHeight * UI.getZoom()});
         window.setView(view);
 
         window.draw(fullscreenQuad);
@@ -288,6 +214,7 @@ int main()
 
         window.display();
     }
-    //if (renderThread.joinable()) renderThread.join();
+    threadRunning = false;
+    if (physicsWorker.joinable()) physicsWorker.join();
     return 0;
 }
