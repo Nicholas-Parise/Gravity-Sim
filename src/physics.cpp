@@ -69,6 +69,8 @@ void Physics::calculateForces(std::vector<Particle> &particles, float time){
 
         if (boundary.contains(particles[i].position)){
             root->insert(&particles[i]);
+        }else{
+            std::cout<<"didn't make the cut: x:"<<particles[i].position.x<<" y:"<<particles[i].position.y<<std::endl;
         }
 
     }
@@ -83,8 +85,6 @@ void Physics::calculateForces(std::vector<Particle> &particles, float time){
     }
 
 */
-
-
 
 
     // Compute forces

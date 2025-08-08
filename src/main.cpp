@@ -44,8 +44,8 @@ void physicsThread(Physics &P, std::vector<Particle> &particles){
     physicsWorker = std::thread([&]()
     {
         while (threadRunning){
-            float dt = deltaTime.load();
             {
+                float dt = deltaTime.load();
                 //std::lock_guard<std::mutex> lock(physicsMutex);
                 P.calculateForces(particles,dt);
             }
@@ -61,6 +61,8 @@ int main()
 
     Physics P;
 
+    srand(time(0));
+
     std::vector<Particle> particles(conf::particles);
 
     sf::VertexArray renderQuad(sf::PrimitiveType::Triangles, 6*conf::particles);
@@ -73,6 +75,9 @@ int main()
 
     particles[0].setMass(2e7);
 
+    particles[1].setMass(2e7);
+
+    particles[2].setMass(2e6);
 
     physicsThread(P, particles);
 

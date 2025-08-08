@@ -7,17 +7,19 @@
 class Particle
 {
     public:
-        Particle();
+        Particle() : Particle(0,0){};
         Particle(float x, float y);
-        virtual ~Particle();
+        ~Particle();
 
-        sf::Vector2f normalize(const sf::Vector2f& v);
-        float length(const sf::Vector2f& v);
+        inline sf::Vector2f normalize(const sf::Vector2f& v);
+        inline float length(const sf::Vector2f& v);
 
-        float calcDistance(Particle p);
-        float calcDirection(Particle p);
+        float calcDistance(const Particle &p);
+        float calcDirection(const Particle &p);
         void updateVelocity(float dt);
         void addAcceleration(float force, float direction);
+        void addAcceleration(sf::Vector2<float> totalForce);
+        void resetAcceleration();
 
         void move(float time);
         sf::VertexArray generateQuad();
@@ -27,12 +29,6 @@ class Particle
         void setMass(float mass);
         void setspeed(float x, float y);
 
-        void addAcceleration(sf::Vector2<float> totalForce);
-
-        sf::Color linearInterpolation(float speed, sf::Color color2);
-
-        void resetAcceleration();
-
         float mass;
         float density;
         float width;
@@ -40,15 +36,16 @@ class Particle
         float direction; // in radians
         sf::Vector2<float> velocity;
         sf::Vector2<float> acceleration;
-
         sf::Vector2<float> position;
-        sf::Vector2<float> temp_position;
 
     protected:
 
     private:
         // used to sum up all the acceleration so we don't over write anything
         sf::Vector2<float> temp_acceleration;
+
+        sf::Color linearInterpolation(float speed, sf::Color color2);
+        sf::Color blendColors(const sf::Color& a, const sf::Color& b);
 };
 
 #endif // PARTICLE_H

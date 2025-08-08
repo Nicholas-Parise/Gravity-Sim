@@ -11,14 +11,14 @@ constexpr double PI = 3.14159265358979323846;
 constexpr float minSpeed = 0.00001f;
 constexpr float maxSpeed = 1000.0f;
 
-constexpr float maxDt = 0.10f;
+constexpr float maxDt = 0.0625f;
 
 constexpr float minPhysDistance = 0.00001f;
 
 
 constexpr float MIN_QUAD_SIZE = 0.0001;
 
-constexpr float theta = 0.50f; // simulation accuracy 0 most 1 least
+constexpr float theta = 0.80f; // simulation accuracy 0 most 1 least
 
 constexpr float dragCoeff = 0.01f;
 
