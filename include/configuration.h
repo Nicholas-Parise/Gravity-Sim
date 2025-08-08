@@ -6,17 +6,27 @@
 namespace conf{
 
 constexpr float timeScale = 1.0f;
-constexpr float G = 2.0f;
+constexpr float G = 6.67e-1f;
 constexpr double PI = 3.14159265358979323846;
 constexpr float minSpeed = 0.00001f;
 constexpr float maxSpeed = 1000.0f;
 
+constexpr float maxDt = 0.10f;
+
+constexpr float minPhysDistance = 0.00001f;
+
+
+constexpr float MIN_QUAD_SIZE = 0.0001;
+
+constexpr float theta = 0.50f; // simulation accuracy 0 most 1 least
+
 constexpr float dragCoeff = 0.01f;
 
 constexpr float maxY = 3000.0f;
-constexpr float maxX = 5000.0f;
+constexpr float maxX = 3000.0f;
 
-constexpr int particles = 1000;
+
+constexpr int particles = 5000;
 constexpr int quadrentSize = 50;
 }
 #endif // CONFIGURATION_H_INCLUDED

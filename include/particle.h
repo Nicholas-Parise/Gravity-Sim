@@ -4,18 +4,18 @@
 #include <SFML/Graphics.hpp>
 
 
-class particle
+class Particle
 {
     public:
-        particle();
-        particle(float x, float y);
-        virtual ~particle();
+        Particle();
+        Particle(float x, float y);
+        virtual ~Particle();
 
         sf::Vector2f normalize(const sf::Vector2f& v);
         float length(const sf::Vector2f& v);
 
-        float calcDistance(particle p);
-        float calcDirection(particle p);
+        float calcDistance(Particle p);
+        float calcDirection(Particle p);
         void updateVelocity(float dt);
         void addAcceleration(float force, float direction);
 
@@ -27,7 +27,9 @@ class particle
         void setMass(float mass);
         void setspeed(float x, float y);
 
-        sf::Color linearInterpolation(float speed);
+        void addAcceleration(sf::Vector2<float> totalForce);
+
+        sf::Color linearInterpolation(float speed, sf::Color color2);
 
         void resetAcceleration();
 

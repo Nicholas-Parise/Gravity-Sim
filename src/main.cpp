@@ -10,9 +10,9 @@
 #include <atomic>
 #include <cstdlib>
 
-#include "configuration.h"
-#include "particle.h"
-#include "physics.h"
+#include "Configuration.h"
+#include "Particle.h"
+#include "Physics.h"
 #include "UserInput.h"
 
 using namespace std;
@@ -39,7 +39,7 @@ void textUpdater(sf::Text &text, long double value, string header){
 }
 
 
-void physicsThread(physics &P, std::vector<particle> &particles){
+void physicsThread(Physics &P, std::vector<Particle> &particles){
     threadRunning = true;
     physicsWorker = std::thread([&]()
     {
@@ -57,38 +57,24 @@ void physicsThread(physics &P, std::vector<particle> &particles){
 
 int main()
 {
-    bool isDragging = false;
-    sf::Vector2i dragStartMouse;
-    sf::Vector2<float> dragStartCenter;
-
-    sf::Vector2<float> pan = { 1.0, 1.0 };
-
-    float basePanSpeed = 20.0f;
-    float panStep = 0.0;
-
-    float zoom = 1.0;
-    float baseZoom = 0.9;
-    int zoomSteps = -8;
-
     UserInput UI;
 
-    physics P;
+    Physics P;
 
-    std::vector<particle> particles(conf::particles);
+    std::vector<Particle> particles(conf::particles);
 
     sf::VertexArray renderQuad(sf::PrimitiveType::Triangles, 6*conf::particles);
 
     for(int i = 0; i<conf::particles; i++){
-        particles[i].setPosition(rand()%ScreenWidth,rand()%ScreenHeight);
-        particles[i].setMass(rand()%10);
+        particles[i].setPosition(rand()%(int)(conf::maxX)-(int)conf::maxX/2,rand()%(int)(conf::maxY)-(int)conf::maxY/2);
+        particles[i].setMass(rand()%100+50);
         particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
     }
 
-    particles[0].setMass(200);
+    particles[0].setMass(2e7);
 
 
     physicsThread(P, particles);
-
 
     std::chrono::steady_clock::time_point lastUpdate;
     float dt;
@@ -127,7 +113,6 @@ int main()
     crosshair.setPoint(11, sf::Vector2f(0, 13));
     crosshair.setOrigin({12.5f, 12.5f});
     crosshair.setPosition({ScreenWidth / 2.f, ScreenHeight / 2.f});
-
 
     const sf::Font font("assets/Arial.ttf");
 
@@ -196,6 +181,9 @@ int main()
                 std::cout << "NaN at index " << i << ": " << particles[i].position.x << ", " << particles[i].position.y << std::endl;
             }
         }
+
+
+//        std::cout<<"node 0 x:"<<particles[0].acceleration.x<<" y:"<<particles[0].acceleration.y<<std::endl;
 
         window.clear();
 

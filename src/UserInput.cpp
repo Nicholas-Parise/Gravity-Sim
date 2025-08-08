@@ -6,7 +6,7 @@ UserInput::UserInput(){
     pan = { 1.0, 1.0 };
     zoom = 1.0;
     isDragging = false;
-    basePanSpeed = 20.0f;
+    basePanSpeed = 200.0f;
     panStep = 0.0;
     baseZoom = 0.9;
     zoomSteps = -8;
@@ -95,7 +95,7 @@ void UserInput::handleKeyboard(sf::RenderWindow &window, float deltaTime){
     }
 
     zoom = pow(baseZoom, zoomSteps);
-    panStep = basePanSpeed * zoom;
+    panStep = this->basePanSpeed * zoom;
 
     float adjustedStep = panStep * deltaTime;
 

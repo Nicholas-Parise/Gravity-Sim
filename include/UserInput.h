@@ -2,6 +2,7 @@
 #define USERINPUT_H
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
+#include <vector>
 
 class UserInput
 {
@@ -27,10 +28,10 @@ class UserInput
         sf::Vector2<float> dragStartCenter;
         const int dragThreshold = 1; // min pixels for drag re-render
 
-        float basePanSpeed = 1000.0f;
-        float panStep = 0.0;
-        float baseZoom = 0.9;
-        int zoomSteps = -8;
+        float basePanSpeed;
+        float panStep;
+        float baseZoom;
+        int zoomSteps;
 };
 
 #endif // USERINPUT_H

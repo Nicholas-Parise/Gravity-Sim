@@ -3,63 +3,62 @@
 #include <cmath>
 #include <iostream>
 
-particle::particle(float x, float y)
+Particle::Particle(float x, float y)
 {
     this->position.x = x;
     this->position.y = y;
-
-    this->mass = 1.0f;
-    this->width = 10.0f;
+    this->density = 1.6; // density of rock 1600 kg/m^3
+    setMass(1.0f);
 }
 
-particle::particle()
+Particle::Particle()
 {
     this->position.x = 0;
     this->position.y = 0;
-    this->mass = 1.0f;
-    this->width = 1.0f;
+    this->density = 1.6; // density of rock 1600 kg/m^3
+    setMass(1.0f);
 }
 
-particle::~particle()
+Particle::~Particle()
 {
     //dtor
 }
 
-void particle::setPosition(float x, float y){
+void Particle::setPosition(float x, float y){
     this->position.x = x;
     this->position.y = y;
 }
 
 
-void particle::setMass(float mass){
+void Particle::setMass(float mass){
 
     if(mass < 0.1){
         mass = 0.1;
     }
     this->mass = mass*10.0;
-    this->width = mass/ 2.0;
+    this->width = std::max(std::cbrt(density*mass),1.0f); // cube root to get width of volume of cube
 }
 
 
 
-void particle::resetAcceleration(){
+void Particle::resetAcceleration(){
     this->temp_acceleration = {0,0};
 }
 
 
-void particle::setspeed(float x, float y){
+void Particle::setspeed(float x, float y){
 
     float speed = sqrt(x * x + y * y);
 
     if(speed < conf::minSpeed){
-        return;
+        speed = conf::minSpeed;
     }
     this->velocity.x = x;
     this->velocity.y = y;
 }
 
 
-float particle::calcDistance(particle p){
+float Particle::calcDistance(Particle p){
 
     float xComp = this->position.x - p.position.x;
     float yComp = this->position.y - p.position.y;
@@ -67,11 +66,11 @@ float particle::calcDistance(particle p){
     return sqrt(xComp*xComp + yComp*yComp);
 }
 
-float particle::calcDirection(particle p){
+float Particle::calcDirection(Particle p){
     return atan2(p.position.y - this->position.y, p.position.x - this->position.x);
 }
 
-void particle::addAcceleration(float force, float direction) {
+void Particle::addAcceleration(float force, float direction) {
     if (!std::isfinite(force) || !std::isfinite(direction)) return;
 
     float acc = force / this->mass;
@@ -81,63 +80,90 @@ void particle::addAcceleration(float force, float direction) {
     };
 }
 
-void particle::updateVelocity(float dt) {
+
+void Particle::addAcceleration(sf::Vector2<float> totalForce) {
+    if (!std::isfinite(totalForce.x) || !std::isfinite(totalForce.y)) return;
+
+    this->temp_acceleration = totalForce / mass;
+}
+
+
+
+void Particle::updateVelocity(float dt) {
     this->velocity += 0.5f * (this->acceleration + this->temp_acceleration) * dt;
     this->velocity -= normalize(this->velocity) * (conf::dragCoeff * length(this->velocity) * dt); // add drag
     this->acceleration = this->temp_acceleration;
 }
 
 
-void particle::move(float dt){
+void Particle::move(float dt){
 
     this->position += this->velocity * dt + 0.5f * this->acceleration * dt * dt;
 
     if(this->position.x > conf::maxX){
-        this->position.x = conf::maxX * -1;
+        this->position.x = conf::maxX;
+        this->velocity.x = conf::minSpeed * -1;
     }
     if(this->position.x < conf::maxX * -1){
-        this->position.x = conf::maxX;
+        this->position.x = conf::maxX * -1;
+        this->velocity.x = conf::minSpeed;
     }
 
     if(this->position.y > conf::maxY){
-        this->position.y = conf::maxY * -1;
+        this->position.y = conf::maxY;
+        this->velocity.y = conf::minSpeed * -1;
     }
     if(this->position.y < conf::maxY * -1){
-        this->position.y = conf::maxY;
+        this->position.y = conf::maxY * -1;
+        this->velocity.y = conf::minSpeed;
     }
+
+
+    /*
+    position.x = fmod(position.x + conf::maxX, conf::maxX * 2);
+    if (position.x < 0) position.x += conf::maxX * 2;
+    position.x -= conf::maxX;
+
+    position.y = fmod(position.y + conf::maxY, conf::maxY * 2);
+    if (position.y < 0) position.y += conf::maxY * 2;
+    position.y -= conf::maxY;
+    */
 }
 
-float particle::getMass(){
+float Particle::getMass(){
     return this->mass;
 }
 
-sf::VertexArray particle::generateQuad(){
+sf::VertexArray Particle::generateQuad(){
 
     float half = this->width / 2.0f;
     float x = this->position.x;
     float y = this->position.y;
 
     sf::VertexArray quad(sf::PrimitiveType::Triangles, 6);
+
     quad[0].position = sf::Vector2f(x - half, y - half);
-    quad[0].color = {linearInterpolation(length(this->velocity))};
+    quad[0].color = {linearInterpolation(length(this->velocity),sf::Color::Red)};
     quad[1].position = sf::Vector2f(x + half, y - half);
+
     quad[2].position = sf::Vector2f(x + half, y + half);
 
     quad[3].position = sf::Vector2f(x + half, y + half);
+    quad[3].color = {linearInterpolation(length(this->velocity),sf::Color::Red)};
     quad[4].position = sf::Vector2f(x - half, y + half);
 
     quad[5].position = sf::Vector2f(x - half, y - half);
-    quad[5].color = {linearInterpolation(length(this->velocity))};
+
 
     return quad;
 }
 
 
-float particle::length(const sf::Vector2f& v) {
+float Particle::length(const sf::Vector2f& v) {
     return std::sqrt(v.x * v.x + v.y * v.y);
 }
 
-sf::Vector2f particle::normalize(const sf::Vector2f& v) {
+sf::Vector2f Particle::normalize(const sf::Vector2f& v) {
     float len = length(v);
     if (len == 0) return {0.f, 0.f};
     return v / len;
@@ -145,10 +171,9 @@ sf::Vector2f particle::normalize(const sf::Vector2f& v) {
 
 
 
-sf::Color particle::linearInterpolation(float speed) {
+sf::Color Particle::linearInterpolation(float speed, sf::Color color2) {
 
     sf::Color color1 = sf::Color::White;
-    sf::Color color2 = sf::Color::Red;
 
     float normalize = speed / 50.0;
     if (normalize > 1.0f) normalize = 1.0f;
