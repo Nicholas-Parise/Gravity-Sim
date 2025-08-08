@@ -22,7 +22,7 @@ int ScreenHeight = 480;
 
 std::thread physicsWorker;
 std::mutex physicsMutex;
-std::atomic<float> deltaTime = 0.016f; // 1/60
+std::atomic<float> tps = 0.016f; // 1/60
 bool threadRunning = true;
 
 void textUpdater(sf::Text &text, long double value, string header){
@@ -41,12 +41,21 @@ void textUpdater(sf::Text &text, long double value, string header){
 
 void physicsThread(Physics &P, std::vector<Particle> &particles){
     threadRunning = true;
+
     physicsWorker = std::thread([&]()
     {
+
+        std::chrono::steady_clock::time_point lastUpdate;
+
         while (threadRunning){
             {
-                float dt = deltaTime.load();
+                //float dt = deltaTime.load();
                 //std::lock_guard<std::mutex> lock(physicsMutex);
+                auto now = std::chrono::steady_clock::now();
+                float dt = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
+                lastUpdate = now;
+                //std::cout<<"dt physics: "<<dt<<std::endl;
+                tps.store(dt);
                 P.calculateForces(particles,dt);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -70,7 +79,7 @@ int main()
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%(int)(conf::maxX)-(int)conf::maxX/2,rand()%(int)(conf::maxY)-(int)conf::maxY/2);
         particles[i].setMass(rand()%100+50);
-        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
+        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 4.0 - 2.0, (static_cast<double>(rand()) / RAND_MAX) * 4.0 - 2.0);
     }
 
     particles[0].setMass(2e7);
@@ -78,6 +87,7 @@ int main()
     particles[1].setMass(2e7);
 
     particles[2].setMass(2e6);
+
 
     physicsThread(P, particles);
 
@@ -128,6 +138,17 @@ int main()
 
     textUpdater(particle_Text,conf::particles,"Particles: ");
 
+    sf::Text fps_Text(font,"0", 30);
+    fps_Text.setFillColor(sf::Color::White);
+    fps_Text.setOrigin(sf::Vector2f(15,15));
+    fps_Text.setPosition({15,65});
+
+    sf::Text tps_Text(font,"0", 30);
+    tps_Text.setFillColor(sf::Color::White);
+    tps_Text.setOrigin(sf::Vector2f(15,15));
+    tps_Text.setPosition({15,105});
+
+
     window.setActive(false);
 
     while (window.isOpen())
@@ -168,12 +189,8 @@ int main()
         dt = std::chrono::duration_cast<std::chrono::microseconds>(now - lastUpdate).count() / 1000000.0f;
         lastUpdate = now;
 
-        deltaTime.store(dt);
 
         UI.handleKeyboard(window,dt);
-
-        // moved physics to thread
-        //P.calculateForces(particles,dt);
 
         renderQuad.clear();
         for(int i = 0; i<conf::particles; i++){
@@ -188,7 +205,17 @@ int main()
         }
 
 
+        //std::cout<<std::endl;
+        //std::cout<<"velocity x:"<<particles[1].velocity.x<<" velocity y:"<<particles[1].velocity.y<<std::endl;
+        //std::cout<<"Position x:"<<particles[1].position.x<<" Position y:"<<particles[1].position.y<<std::endl;
+        //std::cout<<"dt: "<<dt<<std::endl;
+
 //        std::cout<<"node 0 x:"<<particles[0].acceleration.x<<" y:"<<particles[0].acceleration.y<<std::endl;
+
+
+        textUpdater(fps_Text, ceil(1.0/dt), "FPS: ");
+        textUpdater(tps_Text, ceil(1.0/tps.load()), "TPS: ");
+
 
         window.clear();
 
@@ -201,9 +228,12 @@ int main()
 
         crosshairShader.setUniform("background", fullscreenQuad.getTexture());
         window.draw(crosshair, &crosshairShader);
-        window.draw(particle_Text);
 
         window.draw(renderQuad);
+
+        window.draw(particle_Text);
+        window.draw(fps_Text);
+        window.draw(tps_Text);
 
         window.display();
     }

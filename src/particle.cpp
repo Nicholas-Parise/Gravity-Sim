@@ -73,7 +73,7 @@ void Particle::addAcceleration(float force, float direction) {
 void Particle::addAcceleration(sf::Vector2<float> totalForce) {
     if (!std::isfinite(totalForce.x) || !std::isfinite(totalForce.y)) return;
 
-    this->temp_acceleration = totalForce / mass;
+    this->temp_acceleration += totalForce / mass;
 }
 
 

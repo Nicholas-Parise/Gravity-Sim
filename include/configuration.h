@@ -9,7 +9,7 @@ constexpr float timeScale = 1.0f;
 constexpr float G = 6.67e-1f;
 constexpr double PI = 3.14159265358979323846;
 constexpr float minSpeed = 0.00001f;
-constexpr float maxSpeed = 1000.0f;
+constexpr float maxSpeed = 10000.0f;
 
 constexpr float maxDt = 0.0625f;
 
@@ -26,7 +26,7 @@ constexpr float maxY = 3000.0f;
 constexpr float maxX = 3000.0f;
 
 
-constexpr int particles = 5000;
+constexpr int particles = 500000;
 constexpr int quadrentSize = 50;
 }
 #endif // CONFIGURATION_H_INCLUDED
