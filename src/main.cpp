@@ -17,12 +17,13 @@
 
 using namespace std;
 
-int ScreenWidth = 720;
-int ScreenHeight = 480;
+int ScreenWidth = 1280;//720;
+int ScreenHeight = 720;//480;
 
 std::thread physicsWorker;
 std::mutex physicsMutex;
 std::atomic<float> tps = 0.016f; // 1/60
+std::atomic<bool> redraw = true; // 1/60
 bool threadRunning = true;
 
 void textUpdater(sf::Text &text, long double value, string header){
@@ -32,7 +33,7 @@ void textUpdater(sf::Text &text, long double value, string header){
     if(value < 10000){
         ss << value;
     }else{
-        ss << std::scientific << std::setprecision(precision) << value;
+        ss << std::setprecision(precision) << value;
     }
    // std::string varAsString = std::to_string(value);
     text.setString(header+ss.str());
@@ -57,6 +58,7 @@ void physicsThread(Physics &P, std::vector<Particle> &particles){
                 //std::cout<<"dt physics: "<<dt<<std::endl;
                 tps.store(dt);
                 P.calculateForces(particles,dt);
+                redraw.store(true);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
@@ -192,30 +194,26 @@ int main()
 
         UI.handleKeyboard(window,dt);
 
-        renderQuad.clear();
-        for(int i = 0; i<conf::particles; i++){
-            sf::VertexArray quad = particles[i].generateQuad();
-            for(int j = 0; j <quad.getVertexCount(); j++){
-                renderQuad.append(quad[j]);
-            }
-            // DEBUG
-            if (std::isnan(particles[i].position.x) || std::isnan(particles[i].position.y)) {
-                std::cout << "NaN at index " << i << ": " << particles[i].position.x << ", " << particles[i].position.y << std::endl;
+        if(redraw.load()){
+            redraw.store(false);
+            //renderQuad.clear();
+            renderQuad.resize(0);
+            for(int i = 0; i<conf::particles; i++){
+                sf::VertexArray quad = particles[i].generateQuad();
+                for(int j = 0; j <quad.getVertexCount(); j++){
+                    renderQuad.append(quad[j]);
+                }
+                // DEBUG
+                if (std::isnan(particles[i].position.x) || std::isnan(particles[i].position.y)) {
+                    std::cout << "NaN at index " << i << ": " << particles[i].position.x << ", " << particles[i].position.y << std::endl;
+                }
             }
         }
 
-
-        //std::cout<<std::endl;
-        //std::cout<<"velocity x:"<<particles[1].velocity.x<<" velocity y:"<<particles[1].velocity.y<<std::endl;
-        //std::cout<<"Position x:"<<particles[1].position.x<<" Position y:"<<particles[1].position.y<<std::endl;
-        //std::cout<<"dt: "<<dt<<std::endl;
-
-//        std::cout<<"node 0 x:"<<particles[0].acceleration.x<<" y:"<<particles[0].acceleration.y<<std::endl;
-
-
-        textUpdater(fps_Text, ceil(1.0/dt), "FPS: ");
-        textUpdater(tps_Text, ceil(1.0/tps.load()), "TPS: ");
-
+        if(rand()%10 > 8){
+            textUpdater(fps_Text, ceil(1.0/dt), "FPS: ");
+            textUpdater(tps_Text, ceil(1.0/tps.load()), "TPS: ");
+        }
 
         window.clear();
 
@@ -226,14 +224,17 @@ int main()
 
         window.draw(fullscreenQuad);
 
-        crosshairShader.setUniform("background", fullscreenQuad.getTexture());
-        window.draw(crosshair, &crosshairShader);
-
         window.draw(renderQuad);
 
+        window.setView(window.getDefaultView());
+
+        //crosshairShader.setUniform("background", fullscreenQuad.getTexture());
+        //window.draw(crosshair, &crosshairShader);
         window.draw(particle_Text);
         window.draw(fps_Text);
         window.draw(tps_Text);
+
+        window.setView(view);
 
         window.display();
     }
