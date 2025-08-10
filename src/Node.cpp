@@ -1,6 +1,7 @@
 #include "Node.h"
 #include "Configuration.h"
 #include <cmath>
+#include <iostream>
 
 Node::~Node()
 {
@@ -21,6 +22,7 @@ void Node::insert(Particle* p) {
 
     if (this->region.size < conf::MIN_QUAD_SIZE) {
         // Too small to split further
+        std::cout<<"stopped split"<<std::endl;
         return;
     }
 
@@ -68,7 +70,7 @@ void Node::computeForce(Particle* p, sf::Vector2f& totalForce) {
 
     float dx = centerOfMass.x - p->position.x;
     float dy = centerOfMass.y - p->position.y;
-    float dist = std::sqrt(dx*dx + dy*dy) + conf::minPhysDistance;
+    float dist = std::sqrt(dx*dx + dy*dy + conf::minPhysDistance);
 
     float s = region.size * 2;
     if (isLeaf() || (s / dist) < conf::theta) {

@@ -1,12 +1,11 @@
 #include "Physics.h"
 #include "configuration.h"
 #include <cmath>
-#include "Node.h"
 #include <iostream>
 
 Physics::Physics()
 {
-    //ctor
+    initThreads();
 }
 
 Physics::~Physics()
@@ -14,111 +13,148 @@ Physics::~Physics()
     //dtor
 }
 
-void Physics::addtoGrid(Particle &p){
-    int xIdx = static_cast<int>(p.position.x / conf::quadrentSize);
-    int yIdx = static_cast<int>(p.position.y / conf::quadrentSize);
-    spatialGrid[{xIdx, yIdx}].push_back(&p);
-}
 
-void Physics::resetGrid(){
-    spatialGrid.clear();
-}
-
-
-float Physics::calculateGravity(Particle p, Particle p2){
-    float r = std::max(p.calcDistance(p2), conf::minPhysDistance); // add min distance
-    return conf::G*(p.getMass()*p2.getMass())/ pow(r,2);
-}
-/*
-// a big_quad is made of 9 quads in a square shape
-// computer large scale gravity calcualtions
-for each big_quad bq
-    for each big_quad bq2
-            temp_particle_bq.mass = sum_Mass(bq)
-            temp_particle_bq.position = average_position(bq)
-            temp_particle_bq2.mass = sum_Mass(bq2)
-            temp_particle_bq2.position = average_position(bq2)
-            float force = calculateGravity(bq,bq2);
-            float direction = bq.calcDirection(bq2);
-            bq.addAcceleration(force, direction);
-            bq2.addAcceleration(force, direction+conf::PI);
-
-for each big_quad bq
-    particles = bigGetSmall(bq)
-    for each paricle in particles
-        calculate_gravity(particle)
-        add_acceleration(particle)
-        add_acceleration(bq) // add computed acceleration from the large scope gravity
-        add_direction(bq) // add computed direction from the large scope gravity
+/**
+Allow the program to close nicely by stopping all the threads
 */
+void Physics::stopThreads(){
 
-void Physics::calculateForces(std::vector<Particle> &particles, float time){
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        threadRunning.store(false);
+
+        for (int i = 0; i < conf::PHYSICS_THREADS; ++i)
+            threadShouldRun[i] = false;
+    }
+
+    work.notify_all();
+
+    for (int i = 0; i < conf::PHYSICS_THREADS; i++) {
+        if (forceWorkers[i].joinable())
+            forceWorkers[i].join();
+    }
+}
+
+/**
+Start threads
+*/
+void Physics::initThreads(){
+
+    threadRunning.store(true);
+    threadShouldRun.resize(conf::PHYSICS_THREADS, false);
+    for (int i = 0; i < conf::PHYSICS_THREADS; i++) {
+        forceThread(i);
+    }
+}
+
+/**
+notifys all threads that they can now start computing the forces
+block until all the threads are done
+*/
+void Physics::calculateForces() {
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        threadsWorking = conf::PHYSICS_THREADS;
+        for (int i = 0; i < conf::PHYSICS_THREADS; ++i)
+            threadShouldRun[i] = true;
+    }
+    work.notify_all();
+
+    // Block until all worker threads finish
+    {
+        std::unique_lock<std::mutex> lock(mtx);
+        done.wait(lock, [this]() { return threadsWorking == 0; });
+    }
+}
+
+
+/**
+Actually does the physics calculation
+Blocks until it's notifed there is work available
+performs calculations
+decrements the threads running counter
+if there are no more threads running notify that we are all done.
+*/
+void Physics::forceThread(int index){
+
+    int partPerThread = conf::particles / conf::PHYSICS_THREADS;
+    int start = partPerThread * index;
+    int end = (index == conf::PHYSICS_THREADS - 1) ? conf::particles : start + partPerThread;
+
+    forceWorkers[index] = std::thread([this, start, end, index](){
+
+        while (true){
+
+            { // block thread and wait until there is work to do.
+                std::unique_lock<std::mutex> lock(mtx);
+                work.wait(lock, [this, index]() { return threadShouldRun[index] || !threadRunning.load(); });
+                if (!threadRunning.load()) break;
+                if(threadsWorking <= 0) break;
+
+                threadShouldRun[index] = false;
+            }
+            auto& particles = *this->particlesPtr;
+            Node* root = this->rootPtr;
+
+            for (int i = start; i < end; ++i) {
+                Particle& p = particles[i];
+                sf::Vector2f totalForce{0.f, 0.f};
+                root->computeForce(&p, totalForce);
+                p.addAcceleration(totalForce);
+            }
+
+            // set thread as done and notify if all threads are done.
+            {
+                std::lock_guard<std::mutex> lock(mtx);
+                --threadsWorking;
+                assert(threadsWorking >= 0 && "threadsWorking went below zero!");
+                if (threadsWorking == 0) {
+                    done.notify_one();
+                }
+            }
+
+        }
+    });
+}
+
+
+/**
+Update each particles position, velocity, and acceleration
+starts by moving each particle and reseting variables
+then it adds each particle to a quad tree based on position
+it then calls calculateForce which tells all the worker threads to run
+finally it updates the particles veloctiy with the new force
+*/
+void Physics::updateParticles(std::vector<Particle> &particles, float time){
 
     float dt = std::min(time * conf::timeScale, conf::maxDt);
 
-    //resetGrid();
-
     Quad boundary = {0, 0, conf::maxX * 2};
-    Node* root = new Node(boundary);
+    rootPtr = new Node(boundary);
 
     // move and reset temp acceleration
     for(int i = 0; i<conf::particles; i++){
-        particles[i].move(dt); // move particle
-        //addtoGrid(particles[i]); // then add to grid at new position
+        particles[i].move(dt);
         particles[i].resetAcceleration();
 
         if (boundary.contains(particles[i].position)){
-            root->insert(&particles[i]);
+            rootPtr->insert(&particles[i]);
         }else{
             std::cout<<"didn't make the cut: x:"<<particles[i].position.x<<" y:"<<particles[i].position.y<<std::endl;
         }
-
-    }
-/*
-
-    for (auto& p : particles) {
-        if (boundary.contains(p.position)){
-            root->insert(&p);
-        }else{
-         std::cout<<"didn't make the cut: x:"<<p.position.x<<" y:"<<p.position.y<<std::endl;
-        }
     }
 
-*/
+    particlesPtr = &particles;
 
-
-    // Compute forces
-    for (auto& p : particles) {
-        sf::Vector2f totalForce = {0.f, 0.f};
-        root->computeForce(&p, totalForce);
-        p.addAcceleration(totalForce);
-        if(totalForce.x == 0.0 || totalForce.y == 0.0){
-         std::cout<<"didn't move: x:"<<p.position.x<<" y:"<<p.position.y<<std::endl;
-        }
-    }
-
-
-
-
-/*
-    // compute all forces
-    for(int i = 0; i<conf::particles; i++){
-        for(int j = i+1; j<conf::particles; j++){
-
-            float force = calculateGravity(particles[i],particles[j]);
-            float direction = particles[i].calcDirection(particles[j]);
-            particles[i].addAcceleration(force, direction);
-            particles[j].addAcceleration(force, direction+conf::PI); // inverse direction
-        }
-    }
-*/
+    // calculate all forces using threads
+    calculateForces();
 
     // update all velocities
     for(int i = 0; i<conf::particles; i++){
         particles[i].updateVelocity(dt);
     }
 
-    delete root;
+    delete rootPtr;
 
 }
 

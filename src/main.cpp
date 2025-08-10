@@ -17,8 +17,8 @@
 
 using namespace std;
 
-int ScreenWidth = 1280;//720;
-int ScreenHeight = 720;//480;
+int ScreenWidth = 1920;//1280;
+int ScreenHeight = 1080;//720;
 
 std::thread physicsWorker;
 std::mutex physicsMutex;
@@ -57,7 +57,7 @@ void physicsThread(Physics &P, std::vector<Particle> &particles){
                 lastUpdate = now;
                 //std::cout<<"dt physics: "<<dt<<std::endl;
                 tps.store(dt);
-                P.calculateForces(particles,dt);
+                P.updateParticles(particles,dt);
                 redraw.store(true);
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -84,7 +84,7 @@ int main()
         particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 4.0 - 2.0, (static_cast<double>(rand()) / RAND_MAX) * 4.0 - 2.0);
     }
 
-    particles[0].setMass(2e7);
+    particles[0].setMass(2e8);
 
     particles[1].setMass(2e7);
 
@@ -161,6 +161,7 @@ int main()
             if (event->is<sf::Event::Closed>())
             {
                 threadRunning = false;
+                P.stopThreads();
                 if (physicsWorker.joinable()) physicsWorker.join();
                 return 0;
             }
@@ -239,6 +240,7 @@ int main()
         window.display();
     }
     threadRunning = false;
+    P.stopThreads();
     if (physicsWorker.joinable()) physicsWorker.join();
     return 0;
 }

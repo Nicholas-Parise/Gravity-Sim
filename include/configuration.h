@@ -20,11 +20,13 @@ constexpr float MIN_QUAD_SIZE = 0.0001;
 
 constexpr float theta = 0.50f; // simulation accuracy 0 most 1 least
 
-constexpr float dragCoeff = 0.01f;
+constexpr float dragCoeff = 0.5f;
 
-constexpr float maxY = 3000.0f;
-constexpr float maxX = 3000.0f;
+constexpr float maxY = 6000.0f;
+constexpr float maxX = 6000.0f;
 
+
+constexpr int PHYSICS_THREADS = 128;
 
 constexpr int particles = 100000;
 constexpr int quadrentSize = 50;

@@ -1,6 +1,11 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 #include "Particle.h"
+#include "Node.h"
+#include "Configuration.h"
+#include <thread>
+#include <condition_variable>
+#include <atomic>
 
 class Physics
 {
@@ -8,31 +13,27 @@ class Physics
         Physics();
         virtual ~Physics();
 
-        void calculateForces(std::vector<Particle> &particles, float time);
+        void updateParticles(std::vector<Particle> &particles, float time);
+
+        void stopThreads();
 
     protected:
 
     private:
 
-        float calculateGravity(Particle p, Particle p2);
+        void calculateForces();
+        void forceThread(int index);
+        void initThreads();
 
-        void addtoGrid(Particle &particle);
+        std::thread forceWorkers[conf::PHYSICS_THREADS];
+        std::vector<Particle>* particlesPtr = nullptr;
+        Node* rootPtr = nullptr;
 
-        void resetGrid();
-
-
-        // XOR X hash and Y hash then bitshift left 1
-        struct pair_hash {
-            std::size_t operator()(const std::pair<int,int>& p) const {
-                return std::hash<int>{}(p.first) ^ (std::hash<int>{}(p.second) << 1);
-            }
-        };
-
-        std::unordered_map<std::pair<int, int>, std::vector<Particle*>, pair_hash> spatialGrid;
-
-
-
-
+        std::condition_variable work, done;
+        std::mutex mtx;
+        std::atomic<bool> threadRunning{true};
+        int threadsWorking = 0;
+        std::vector<bool> threadShouldRun;
 };
 
 #endif // PHYSICS_H

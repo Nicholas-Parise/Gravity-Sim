@@ -35,7 +35,7 @@ class Node
         float totalMass = 0;
         sf::Vector2f centerOfMass = {0.f, 0.f};
 
-        bool isLeaf() const {
+        inline bool isLeaf() const {
             return !NW && !NE && !SW && !SE;
         }
 
