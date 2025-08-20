@@ -81,15 +81,18 @@ int main()
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%(int)(conf::maxX)-(int)conf::maxX/2,rand()%(int)(conf::maxY)-(int)conf::maxY/2);
         particles[i].setMass(rand()%100+50);
-        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 4.0 - 2.0, (static_cast<double>(rand()) / RAND_MAX) * 4.0 - 2.0);
+        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 8.0 - 4.0, (static_cast<double>(rand()) / RAND_MAX) * 8.0 - 4.0);
     }
 
     particles[0].setMass(2e8);
+    particles[0].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
+    particles[0].setPosition(50,50);
 
     particles[1].setMass(2e7);
+    particles[1].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
 
     particles[2].setMass(2e6);
-
+    particles[2].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
 
     physicsThread(P, particles);
 
@@ -100,7 +103,18 @@ int main()
     lastUpdate = now;
 
 
-    sf::RenderWindow window(sf::VideoMode({ScreenWidth, ScreenHeight}), "Gravity");
+    sf::ContextSettings settings;
+    settings.majorVersion = 2;
+    settings.minorVersion = 1;
+    settings.attributeFlags = sf::ContextSettings::Default;
+    sf::RenderWindow window(
+                            sf::VideoMode({ScreenWidth, ScreenHeight}),
+                            "Gravity",
+                            sf::Style::Default,
+                            sf::State::Windowed,
+                            sf::ContextSettings(settings)
+                            );
+
     //window.setFramerateLimit(60);
 
     // Create a fullscreen rectangle
@@ -112,6 +126,11 @@ int main()
         return -1;
 
     crosshairShader.setUniform("screenSize", sf::Glsl::Vec2(window.getSize().x, window.getSize().y));
+
+
+    sf::Shader circleShader;
+    if (!circleShader.loadFromFile("src/circle.vert","src/circle.frag"))
+        return -1;
 
     // create crosshair
     sf::ConvexShape crosshair;
@@ -149,6 +168,30 @@ int main()
     tps_Text.setFillColor(sf::Color::White);
     tps_Text.setOrigin(sf::Vector2f(15,15));
     tps_Text.setPosition({15,105});
+
+
+    sf::VertexArray quad(sf::PrimitiveType::Triangles, 6);
+
+    sf::Vector2f topLeft(300.f, 200.f);
+    sf::Vector2f topRight(500.f, 200.f);
+    sf::Vector2f bottomLeft(300.f, 400.f);
+    sf::Vector2f bottomRight(500.f, 400.f);
+
+    // Triangle 1
+    quad[0].position = topLeft;     quad[0].color = sf::Color::White; quad[0].texCoords = {0.f, 0.f};
+    quad[1].position = bottomLeft;  quad[1].color = sf::Color::White; quad[1].texCoords = {0.f, 1.f};
+    quad[2].position = topRight;    quad[2].color = sf::Color::White; quad[2].texCoords = {1.f, 0.f};
+
+    // Triangle 2
+    quad[3].position = bottomLeft;  quad[3].color = sf::Color::White; quad[3].texCoords = {0.f, 1.f};
+    quad[4].position = bottomRight; quad[4].color = sf::Color::White; quad[4].texCoords = {1.f, 1.f};
+    quad[5].position = topRight;    quad[5].color = sf::Color::White; quad[5].texCoords = {1.f, 0.f};
+
+
+
+
+
+
 
 
     window.setActive(false);
@@ -199,7 +242,7 @@ int main()
             redraw.store(false);
             //renderQuad.clear();
             renderQuad.resize(0);
-            for(int i = 0; i<conf::particles; i++){
+           for(int i = 0; i<conf::particles; i++){
                 sf::VertexArray quad = particles[i].generateQuad();
                 for(int j = 0; j <quad.getVertexCount(); j++){
                     renderQuad.append(quad[j]);
@@ -208,28 +251,39 @@ int main()
                 if (std::isnan(particles[i].position.x) || std::isnan(particles[i].position.y)) {
                     std::cout << "NaN at index " << i << ": " << particles[i].position.x << ", " << particles[i].position.y << std::endl;
                 }
-            }
+           }
         }
 
+        // update the text 1 / 5 frames
         if(rand()%10 > 8){
             textUpdater(fps_Text, ceil(1.0/dt), "FPS: ");
             textUpdater(tps_Text, ceil(1.0/tps.load()), "TPS: ");
         }
 
-        window.clear();
+        window.clear(sf::Color::Black);
 
         sf::View view = window.getView();
         view.setCenter(UI.getPan());
         view.setSize({ScreenWidth * UI.getZoom(), ScreenHeight * UI.getZoom()});
         window.setView(view);
 
-        window.draw(fullscreenQuad);
+        //window.draw(fullscreenQuad);
+        {
 
-        window.draw(renderQuad);
+            circleShader.setUniform("projection", sf::Glsl::Mat4(window.getView().getTransform()));
+            circleShader.setUniform("color", sf::Glsl::Vec4(1.0f, 0.0f, 0.0f, 1.0f)); // red
+
+            sf::RenderStates states;
+            states.shader = &circleShader;
+
+            window.draw(renderQuad, &circleShader);
+            //window.draw(renderQuad);
+        }
+
 
         window.setView(window.getDefaultView());
 
-        //crosshairShader.setUniform("background", fullscreenQuad.getTexture());
+        crosshairShader.setUniform("background", fullscreenQuad.getTexture());
         //window.draw(crosshair, &crosshairShader);
         window.draw(particle_Text);
         window.draw(fps_Text);

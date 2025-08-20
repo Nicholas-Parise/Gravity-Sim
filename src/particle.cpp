@@ -77,7 +77,6 @@ void Particle::addAcceleration(sf::Vector2<float> totalForce) {
 }
 
 
-
 void Particle::updateVelocity(float dt) {
     this->velocity += 0.5f * (this->acceleration + this->temp_acceleration) * dt;
     this->velocity -= normalize(this->velocity) * (conf::dragCoeff * length(this->velocity) * dt); // add drag
@@ -88,26 +87,6 @@ void Particle::updateVelocity(float dt) {
 void Particle::move(float dt){
 
     this->position += this->velocity * dt + 0.5f * this->acceleration * dt * dt;
-/*
-    if(this->position.x > conf::maxX){
-        this->position.x = conf::maxX;
-        this->velocity.x = conf::minSpeed * -1;
-    }
-    if(this->position.x < conf::maxX * -1){
-        this->position.x = conf::maxX * -1;
-        this->velocity.x = conf::minSpeed;
-    }
-
-    if(this->position.y > conf::maxY){
-        this->position.y = conf::maxY;
-        this->velocity.y = conf::minSpeed * -1;
-    }
-    if(this->position.y < conf::maxY * -1){
-        this->position.y = conf::maxY * -1;
-        this->velocity.y = conf::minSpeed;
-    }
-*/
-
 
     position.x = fmod(position.x + conf::maxX, conf::maxX * 2);
     if (position.x < 0) position.x += conf::maxX * 2;
@@ -116,7 +95,6 @@ void Particle::move(float dt){
     position.y = fmod(position.y + conf::maxY, conf::maxY * 2);
     if (position.y < 0) position.y += conf::maxY * 2;
     position.y -= conf::maxY;
-
 }
 
 float Particle::getMass(){
@@ -126,17 +104,30 @@ float Particle::getMass(){
 sf::VertexArray Particle::generateQuad(){
 
     float half = this->width / 2.0f;
-    float x = this->position.x;
-    float y = this->position.y;
+    float x = this->position.x - half;
+    float y = this->position.y - half;
+
+    sf::Vector2f topLeft(x,y);
+    sf::Vector2f topRight(x + width, y);
+    sf::Vector2f bottomLeft(x, y + width);
+    sf::Vector2f bottomRight(x + width, y + width);
 
     sf::VertexArray quad(sf::PrimitiveType::Triangles, 6);
 
-    quad[0].position = sf::Vector2f(x - half, y - half);
-    quad[1].position = sf::Vector2f(x + half, y - half);
-    quad[2].position = sf::Vector2f(x + half, y + half);
-    quad[3].position = sf::Vector2f(x + half, y + half);
-    quad[4].position = sf::Vector2f(x - half, y + half);
-    quad[5].position = sf::Vector2f(x - half, y - half);
+    quad[0].position = topLeft;
+    quad[0].texCoords = sf::Vector2f(0.0f, 0.0f);
+    quad[1].position = bottomLeft;
+    quad[1].texCoords = sf::Vector2f(0.0f, 1.0f);
+    quad[2].position = topRight;
+    quad[2].texCoords = sf::Vector2f(1.0f, 0.0f);
+
+    quad[3].position = bottomLeft;
+    quad[3].texCoords = sf::Vector2f(0.0f, 1.0f);
+    quad[4].position = bottomRight;
+    quad[4].texCoords = sf::Vector2f(1.0f, 1.0f);
+    quad[5].position = topRight;
+    quad[5].texCoords = sf::Vector2f(1.0f, 0.0f);
+
 
     sf::Color topColor    = (this->velocity.y < 0) ? linearInterpolation(-this->velocity.y, sf::Color::Red) : sf::Color::White;
     sf::Color bottomColor = (this->velocity.y > 0) ? linearInterpolation(this->velocity.y, sf::Color::Red) : sf::Color::White;
@@ -144,11 +135,12 @@ sf::VertexArray Particle::generateQuad(){
     sf::Color leftColor   = (this->velocity.x < 0) ? linearInterpolation(-this->velocity.x, sf::Color::Blue) : sf::Color::White;
 
     quad[0].color = blendColors(leftColor, topColor);
-    quad[1].color = blendColors(rightColor, topColor);
-    quad[2].color = blendColors(rightColor, bottomColor);
-    quad[3].color = blendColors(rightColor, bottomColor);
-    quad[4].color = blendColors(leftColor, bottomColor);
-    quad[5].color = blendColors(leftColor, topColor);
+    quad[1].color = blendColors(leftColor, bottomColor);
+    quad[2].color = blendColors(rightColor, topColor);
+
+    quad[3].color = blendColors(leftColor, bottomColor);
+    quad[4].color = blendColors(rightColor, bottomColor);
+    quad[5].color = blendColors(rightColor, topColor);
     return quad;
 }
 

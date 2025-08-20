@@ -139,14 +139,13 @@ void Physics::updateParticles(std::vector<Particle> &particles, float time){
 
         if (boundary.contains(particles[i].position)){
             rootPtr->insert(&particles[i]);
-        }else{
-            std::cout<<"didn't make the cut: x:"<<particles[i].position.x<<" y:"<<particles[i].position.y<<std::endl;
         }
     }
 
     particlesPtr = &particles;
 
     // calculate all forces using threads
+    if (!threadRunning.load()) return;
     calculateForces();
 
     // update all velocities
@@ -155,7 +154,6 @@ void Physics::updateParticles(std::vector<Particle> &particles, float time){
     }
 
     delete rootPtr;
-
 }
 
 
