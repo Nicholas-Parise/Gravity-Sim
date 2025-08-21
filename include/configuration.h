@@ -28,7 +28,7 @@ constexpr float maxX = 6000.0f;
 
 constexpr int PHYSICS_THREADS = 1;
 
-constexpr int particles = 10000;
+constexpr int particles = 50000;
 constexpr int quadrentSize = 50;
 }
 #endif // CONFIGURATION_H_INCLUDED

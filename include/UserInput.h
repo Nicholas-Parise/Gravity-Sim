@@ -1,7 +1,7 @@
 #ifndef USERINPUT_H
 #define USERINPUT_H
-#include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Window/Event.hpp>
 #include <vector>
 
 class UserInput
@@ -31,7 +31,7 @@ class UserInput
         float basePanSpeed;
         float panStep;
         float baseZoom;
-        int zoomSteps;
+        float zoomSteps;
 };
 
 #endif // USERINPUT_H

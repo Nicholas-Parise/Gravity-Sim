@@ -52,7 +52,6 @@ void Node::insert(Particle* p) {
 
         updateMassAndCenter(p);
     }
-
 }
 
 void Node::updateMassAndCenter(Particle* p) {
@@ -70,13 +69,18 @@ void Node::computeForce(Particle* p, sf::Vector2f& totalForce) {
 
     float dx = centerOfMass.x - p->position.x;
     float dy = centerOfMass.y - p->position.y;
-    float dist = std::sqrt(dx*dx + dy*dy + conf::minPhysDistance);
+    float dist2 = dx*dx + dy*dy + conf::minPhysDistance*conf::minPhysDistance;
+    //float dist = std::sqrt(dx*dx + dy*dy + conf::minPhysDistance*conf::minPhysDistance);
+    //float invDist = 1.0f / dist;
 
-    float s = region.size * 2;
-    if (isLeaf() || (s / dist) < conf::theta) {
-        float F = (conf::G * totalMass * p->mass) / (dist * dist);
+    float s2 = region.size * region.size * 4.0f;
+    if (isLeaf() || s2 < dist2 * conf::theta * conf::theta) {
+        float invDist = 1.0f / std::sqrt(dist2); // save 3 divisions by pre computing this value
+        float F = (conf::G * totalMass * p->mass) * (invDist * invDist * invDist);
         // normalize vector to be in correct direction
-        totalForce += sf::Vector2f(F * dx / dist, F * dy / dist);
+        // we save one multiply by multiplying our force by invDist^3 instead of invDist^2
+        totalForce.x += F * dx;
+        totalForce.y += F * dy;
     }else {
         if (NW) NW->computeForce(p, totalForce);
         if (NE) NE->computeForce(p, totalForce);
@@ -84,5 +88,3 @@ void Node::computeForce(Particle* p, sf::Vector2f& totalForce) {
         if (SE) SE->computeForce(p, totalForce);
     }
 }
-
-

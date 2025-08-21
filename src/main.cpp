@@ -1,6 +1,6 @@
 #include <iostream>
 #include <SFML/System.hpp>
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Window.hpp>
 #include <cmath>
@@ -80,7 +80,7 @@ int main()
 
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%(int)(conf::maxX)-(int)conf::maxX/2,rand()%(int)(conf::maxY)-(int)conf::maxY/2);
-        particles[i].setMass(rand()%100+50);
+        particles[i].setMass(rand()%100+100);
         particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 8.0 - 4.0, (static_cast<double>(rand()) / RAND_MAX) * 8.0 - 4.0);
     }
 
@@ -169,31 +169,6 @@ int main()
     tps_Text.setOrigin(sf::Vector2f(15,15));
     tps_Text.setPosition({15,105});
 
-
-    sf::VertexArray quad(sf::PrimitiveType::Triangles, 6);
-
-    sf::Vector2f topLeft(300.f, 200.f);
-    sf::Vector2f topRight(500.f, 200.f);
-    sf::Vector2f bottomLeft(300.f, 400.f);
-    sf::Vector2f bottomRight(500.f, 400.f);
-
-    // Triangle 1
-    quad[0].position = topLeft;     quad[0].color = sf::Color::White; quad[0].texCoords = {0.f, 0.f};
-    quad[1].position = bottomLeft;  quad[1].color = sf::Color::White; quad[1].texCoords = {0.f, 1.f};
-    quad[2].position = topRight;    quad[2].color = sf::Color::White; quad[2].texCoords = {1.f, 0.f};
-
-    // Triangle 2
-    quad[3].position = bottomLeft;  quad[3].color = sf::Color::White; quad[3].texCoords = {0.f, 1.f};
-    quad[4].position = bottomRight; quad[4].color = sf::Color::White; quad[4].texCoords = {1.f, 1.f};
-    quad[5].position = topRight;    quad[5].color = sf::Color::White; quad[5].texCoords = {1.f, 0.f};
-
-
-
-
-
-
-
-
     window.setActive(false);
 
     while (window.isOpen())
@@ -269,17 +244,8 @@ int main()
 
         //window.draw(fullscreenQuad);
         {
-
-            circleShader.setUniform("projection", sf::Glsl::Mat4(window.getView().getTransform()));
-            circleShader.setUniform("color", sf::Glsl::Vec4(1.0f, 0.0f, 0.0f, 1.0f)); // red
-
-            sf::RenderStates states;
-            states.shader = &circleShader;
-
             window.draw(renderQuad, &circleShader);
-            //window.draw(renderQuad);
         }
-
 
         window.setView(window.getDefaultView());
 
