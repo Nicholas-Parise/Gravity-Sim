@@ -34,6 +34,8 @@ class Physics
         std::atomic<bool> threadRunning{true};
         int threadsWorking = 0;
         std::vector<bool> threadShouldRun;
+
+        NodePool nodePool;
 };
 
 #endif // PHYSICS_H

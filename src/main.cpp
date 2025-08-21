@@ -26,6 +26,8 @@ std::atomic<float> tps = 0.016f; // 1/60
 std::atomic<bool> redraw = true; // 1/60
 bool threadRunning = true;
 
+extern size_t forceCalls;
+
 void textUpdater(sf::Text &text, long double value, string header){
 
     int precision = 5;
@@ -214,6 +216,10 @@ int main()
         UI.handleKeyboard(window,dt);
 
         if(redraw.load()){
+
+            //std::cout<<forceCalls<<endl;
+            forceCalls = 0;
+
             redraw.store(false);
             //renderQuad.clear();
             renderQuad.resize(0);

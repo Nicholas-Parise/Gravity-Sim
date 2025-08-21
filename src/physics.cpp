@@ -1,9 +1,9 @@
+#include <cmath>
 #include "Physics.h"
 #include "configuration.h"
-#include <cmath>
 #include <iostream>
 
-Physics::Physics()
+Physics::Physics() : nodePool(4 * conf::particles)
 {
     initThreads();
 }
@@ -130,7 +130,10 @@ void Physics::updateParticles(std::vector<Particle> &particles, float time){
     float dt = std::min(time * conf::timeScale, conf::maxDt);
 
     Quad boundary = {0, 0, conf::maxX * 2};
-    rootPtr = new Node(boundary);
+
+    nodePool.clear();
+    rootPtr = nodePool.allocate(boundary);
+    //rootPtr = new Node(boundary);
 
     // move and reset temp acceleration
     for(int i = 0; i<conf::particles; i++){
@@ -138,7 +141,7 @@ void Physics::updateParticles(std::vector<Particle> &particles, float time){
         particles[i].resetAcceleration();
 
         if (boundary.contains(particles[i].position)){
-            rootPtr->insert(&particles[i]);
+            rootPtr->insert(&particles[i], nodePool);
         }
     }
 
@@ -153,7 +156,7 @@ void Physics::updateParticles(std::vector<Particle> &particles, float time){
         particles[i].updateVelocity(dt);
     }
 
-    delete rootPtr;
+    //delete rootPtr;
 }
 
 

@@ -3,7 +3,6 @@
 #include <SFML/System.hpp>
 #include <SFML/Graphics.hpp>
 
-
 class Particle
 {
     public:
