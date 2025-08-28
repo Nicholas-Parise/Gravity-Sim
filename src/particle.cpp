@@ -39,8 +39,8 @@ void Particle::setspeed(float x, float y){
 
     float speed = sqrt(x * x + y * y);
 
-    if(speed < conf::minSpeed){
-        speed = conf::minSpeed;
+    if(speed < conf::MIN_SPEED){
+        speed = conf::MIN_SPEED;
     }
     this->velocity.x = x;
     this->velocity.y = y;
@@ -84,7 +84,7 @@ void Particle::addAcceleration(sf::Vector2<float> totalForce) {
 
 void Particle::updateVelocity(float dt) {
     this->velocity += 0.5f * (this->acceleration + this->temp_acceleration) * dt;
-    this->velocity -= normalize(this->velocity) * (conf::dragCoeff * length(this->velocity) * dt); // add drag
+    this->velocity -= normalize(this->velocity) * (conf::DRAG_COEFF * length(this->velocity) * dt); // add drag
     this->acceleration = this->temp_acceleration;
 }
 
@@ -93,13 +93,13 @@ void Particle::move(float dt){
 
     this->position += this->velocity * dt + 0.5f * this->acceleration * dt * dt;
 
-    position.x = fmod(position.x + conf::maxX, conf::maxX * 2);
-    if (position.x < 0) position.x += conf::maxX * 2;
-    position.x -= conf::maxX;
+    position.x = fmod(position.x + conf::MAX_X, conf::MAX_X * 2);
+    if (position.x < 0) position.x += conf::MAX_X * 2;
+    position.x -= conf::MAX_X;
 
-    position.y = fmod(position.y + conf::maxY, conf::maxY * 2);
-    if (position.y < 0) position.y += conf::maxY * 2;
-    position.y -= conf::maxY;
+    position.y = fmod(position.y + conf::MAX_Y, conf::MAX_Y * 2);
+    if (position.y < 0) position.y += conf::MAX_Y * 2;
+    position.y -= conf::MAX_Y;
 }
 
 float Particle::getMass(){

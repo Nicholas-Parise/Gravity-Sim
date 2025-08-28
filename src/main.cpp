@@ -18,8 +18,8 @@
 
 using namespace std;
 
-int ScreenWidth = conf::ScreenWidth;
-int ScreenHeight = conf::ScreenHeight;
+int ScreenWidth = conf::SCREEN_WIDTH;
+int ScreenHeight = conf::SCREEN_HEIGHT;
 
 std::thread physicsWorker;
 std::mutex physicsMutex;
@@ -241,22 +241,23 @@ int main()
                 }
            }
 
+            if(conf::SAVE_PICTURES){
+                sf::RenderTexture renderTex({ScreenWidth, ScreenHeight});
 
-            sf::RenderTexture renderTex({ScreenWidth, ScreenHeight});
+                sf::View simView;
+                simView.setCenter(UI.getPan());
+                simView.setSize({ScreenWidth * UI.getZoom(), ScreenHeight * UI.getZoom()});
+                renderTex.setView(simView);
 
-            sf::View simView;
-            simView.setCenter(UI.getPan());
-            simView.setSize({ScreenWidth * UI.getZoom(), ScreenHeight * UI.getZoom()});
-            renderTex.setView(simView);
+                renderTex.clear(sf::Color::Black);
+                renderTex.draw(renderQuad, &circleShader);
+                renderTex.display();
 
-            renderTex.clear(sf::Color::Black);
-            renderTex.draw(renderQuad, &circleShader);
-            renderTex.display();
-
-            sf::Image screenshot = renderTex.getTexture().copyToImage();
-            std::stringstream ss;
-            ss << "frame/frame_" << frameCounter++ << ".png";
-            screenshot.saveToFile(ss.str());
+                sf::Image screenshot = renderTex.getTexture().copyToImage();
+                std::stringstream ss;
+                ss << "frame/frame_" << frameCounter++ << ".png";
+                screenshot.saveToFile(ss.str());
+            }
         }
 
         // update the text 1 / 5 frames
@@ -264,9 +265,6 @@ int main()
             textUpdater(fps_Text, ceil(1.0/dt), "FPS: ");
             textUpdater(tps_Text, ceil(1.0/tps.load()), "TPS: ");
         }
-
-        std::cout<<UI.getZoom()<<std::endl;
-
 
         window.clear(sf::Color::Black);
 

@@ -34,12 +34,12 @@ ParticleBuilder& ParticleBuilder::setPositionUniform(float border){
     if(border >1) border = 1.0f;
     if(border <0) border = 0.0f;
 
-    float maxY = conf::maxY - conf::maxY * border;
-    float maxX = conf::maxX - conf::maxX * border;
+    float MAX_Y = conf::MAX_Y - conf::MAX_Y * border;
+    float MAX_X = conf::MAX_X - conf::MAX_X * border;
 
     for(int i = 0; i<conf::particles; i++){
-        float x = (rand()%(int)(maxX+maxX+1))-(int)maxX;
-        float y = (rand()%(int)(maxY+maxY+1))-(int)maxY;
+        float x = (rand()%(int)(MAX_X+MAX_X+1))-(int)MAX_X;
+        float y = (rand()%(int)(MAX_Y+MAX_Y+1))-(int)MAX_Y;
         particles[i].setPosition(x, y);
     }
     return *this;
@@ -53,7 +53,7 @@ ParticleBuilder& ParticleBuilder::setPositionRing(float radius){
     if(radius >1) radius = 1.0f;
     if(radius <0.1) radius = 0.1f;
 
-    radius = radius * std::min(conf::maxX, conf::maxY);
+    radius = radius * std::min(conf::MAX_X, conf::MAX_Y);
 
     for(int i = 0; i<conf::particles; i++){
         float angle = (static_cast<double>(rand()) / RAND_MAX) * 2 * conf::PI;
@@ -74,7 +74,7 @@ ParticleBuilder& ParticleBuilder::setPositionCirlce(float radius){
     if(radius >1) radius = 1.0f;
     if(radius <0.1) radius = 0.1f;
 
-    radius = radius * std::min(conf::maxX, conf::maxY);
+    radius = radius * std::min(conf::MAX_X, conf::MAX_Y);
 
     for(int i = 0; i<conf::particles; i++){
         float angle = (static_cast<double>(rand()) / RAND_MAX) * 2 * conf::PI;

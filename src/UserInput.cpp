@@ -5,7 +5,7 @@
 UserInput::UserInput(){
     pan = { 1.0, 1.0 };
 
-    zoom = 2* conf::maxX / conf::ScreenWidth;
+    zoom = 2* conf::MAX_X / conf::SCREEN_WIDTH;
 
     isDragging = false;
     basePanSpeed = 200.0f;
@@ -43,7 +43,7 @@ void UserInput::handleMouse(const std::optional<sf::Event>& event, sf::RenderWin
                 zoomSteps++;
             }
             else{
-                if(window.getSize().y * zoom < conf::maxY*2.5f){
+                if(window.getSize().y * zoom < conf::MAX_Y*2.5f){
                     zoomSteps--;
                 }
             }
@@ -93,7 +93,7 @@ void UserInput::handleKeyboard(sf::RenderWindow &window, float deltaTime){
         zoomSteps+=0.1f;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Subtract)){
-        if(window.getSize().y * zoom < conf::maxY*2.5f){
+        if(window.getSize().y * zoom < conf::MAX_Y*2.5f){
             zoomSteps-=0.1f;
         }
     }

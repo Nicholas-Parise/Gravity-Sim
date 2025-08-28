@@ -127,9 +127,9 @@ finally it updates the particles veloctiy with the new force
 */
 void Physics::updateParticles(std::vector<Particle> &particles, float time){
 
-    float dt = std::min(time * conf::timeScale, conf::maxDt);
+    float dt = std::min(time * conf::timeScale, conf::MAX_DT);
 
-    Quad boundary = {0, 0, conf::maxX * 2};
+    Quad boundary = {0, 0, conf::MAX_X * 2};
 
     nodePool.clear();
     rootPtr = nodePool.allocate(boundary);

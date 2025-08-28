@@ -84,12 +84,12 @@ void Node::computeForce(Particle* p, sf::Vector2f& totalForce) {
 
     float dx = centerOfMass.x - p->position.x;
     float dy = centerOfMass.y - p->position.y;
-    float dist2 = dx*dx + dy*dy + conf::minPhysDistance*conf::minPhysDistance;
-    //float dist = std::sqrt(dx*dx + dy*dy + conf::minPhysDistance*conf::minPhysDistance);
+    float dist2 = dx*dx + dy*dy + conf::MIN_PHYSICS_DISTANCE*conf::MIN_PHYSICS_DISTANCE;
+    //float dist = std::sqrt(dx*dx + dy*dy + conf::MIN_PHYSICS_DISTANCE*conf::MIN_PHYSICS_DISTANCE);
     //float invDist = 1.0f / dist;
 
     float s2 = region.size * region.size * 4.0f;
-    if (isLeaf() || s2 < dist2 * conf::theta * conf::theta) {
+    if (isLeaf() || s2 < dist2 * conf::THETA * conf::THETA) {
         float invDist = 1.0f / std::sqrt(dist2); // save 3 divisions by pre computing this value
         float F = (conf::G * totalMass * p->mass) * (invDist * invDist * invDist);
 
