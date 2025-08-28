@@ -4,12 +4,16 @@
 
 UserInput::UserInput(){
     pan = { 1.0, 1.0 };
-    zoom = 1.0;
+
+    zoom = 2* conf::maxX / conf::ScreenWidth;
+
     isDragging = false;
     basePanSpeed = 200.0f;
     panStep = 0.0;
+
     baseZoom = 0.9;
-    zoomSteps = -8.0;
+
+    zoomSteps = std::log10(zoom) / std::log10(baseZoom);
 }
 
 UserInput::~UserInput(){

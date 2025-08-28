@@ -46,6 +46,11 @@ void Particle::setspeed(float x, float y){
     this->velocity.y = y;
 }
 
+void Particle::setAcceleration(float x, float y){
+    this->temp_acceleration = {x,y};
+    this->acceleration = {x,y};
+}
+
 
 float Particle::calcDistance(const Particle &p){
 

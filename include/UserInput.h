@@ -14,7 +14,7 @@ class UserInput
             float getZoom();
 
             sf::Vector2<float> pan = { 1.0, 1.0 };
-            float zoom = 1.0;
+            float zoom;
 
             void handleMouse(const std::optional<sf::Event>& event, sf::RenderWindow &window);
             void handleKeyboard(sf::RenderWindow &window, float deltaTime);

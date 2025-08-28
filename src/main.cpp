@@ -14,17 +14,20 @@
 #include "Particle.h"
 #include "Physics.h"
 #include "UserInput.h"
+#include "ParticleBuilder.h"
 
 using namespace std;
 
-int ScreenWidth = 1920;//1280;
-int ScreenHeight = 1080;//720;
+int ScreenWidth = conf::ScreenWidth;
+int ScreenHeight = conf::ScreenHeight;
 
 std::thread physicsWorker;
 std::mutex physicsMutex;
 std::atomic<float> tps = 0.016f; // 1/60
 std::atomic<bool> redraw = true; // 1/60
 bool threadRunning = true;
+
+int frameCounter = 0;
 
 extern size_t forceCalls;
 
@@ -76,24 +79,31 @@ int main()
 
     srand(time(0));
 
-    std::vector<Particle> particles(conf::particles);
+    ParticleBuilder pb;
+
+    std::vector<Particle> particles = pb.generate();
+
+    //std::vector<Particle> particles(conf::particles);
 
     sf::VertexArray renderQuad(sf::PrimitiveType::Triangles, 6*conf::particles);
+
+/*
 
     for(int i = 0; i<conf::particles; i++){
         particles[i].setPosition(rand()%(int)(conf::maxX)-(int)conf::maxX/2,rand()%(int)(conf::maxY)-(int)conf::maxY/2);
         particles[i].setMass(rand()%100+100);
-        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 8.0 - 4.0, (static_cast<double>(rand()) / RAND_MAX) * 8.0 - 4.0);
+        particles[i].setspeed((static_cast<double>(rand()) / RAND_MAX) * 300.0 - 150.0, (static_cast<double>(rand()) / RAND_MAX) * 300.0 - 150.0);
+        particles[i].addAcceleration({(static_cast<double>(rand()) / RAND_MAX) * 300.0 - 150.0,(static_cast<double>(rand()) / RAND_MAX) * 300.0 - 150.0});
     }
-
-    particles[0].setMass(2e8);
+*/
+    particles[0].setMass(2e9);
     particles[0].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
     particles[0].setPosition(50,50);
 
-    particles[1].setMass(2e7);
+    particles[1].setMass(2e4);
     particles[1].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
 
-    particles[2].setMass(2e6);
+    particles[2].setMass(2e4);
     particles[2].setspeed((static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0, (static_cast<double>(rand()) / RAND_MAX) * 2.0 - 1.0);
 
     physicsThread(P, particles);
@@ -217,9 +227,6 @@ int main()
 
         if(redraw.load()){
 
-            //std::cout<<forceCalls<<endl;
-            forceCalls = 0;
-
             redraw.store(false);
             //renderQuad.clear();
             renderQuad.resize(0);
@@ -233,6 +240,23 @@ int main()
                     std::cout << "NaN at index " << i << ": " << particles[i].position.x << ", " << particles[i].position.y << std::endl;
                 }
            }
+
+
+            sf::RenderTexture renderTex({ScreenWidth, ScreenHeight});
+
+            sf::View simView;
+            simView.setCenter(UI.getPan());
+            simView.setSize({ScreenWidth * UI.getZoom(), ScreenHeight * UI.getZoom()});
+            renderTex.setView(simView);
+
+            renderTex.clear(sf::Color::Black);
+            renderTex.draw(renderQuad, &circleShader);
+            renderTex.display();
+
+            sf::Image screenshot = renderTex.getTexture().copyToImage();
+            std::stringstream ss;
+            ss << "frame/frame_" << frameCounter++ << ".png";
+            screenshot.saveToFile(ss.str());
         }
 
         // update the text 1 / 5 frames
@@ -240,6 +264,9 @@ int main()
             textUpdater(fps_Text, ceil(1.0/dt), "FPS: ");
             textUpdater(tps_Text, ceil(1.0/tps.load()), "TPS: ");
         }
+
+        std::cout<<UI.getZoom()<<std::endl;
+
 
         window.clear(sf::Color::Black);
 
@@ -255,8 +282,6 @@ int main()
 
         window.setView(window.getDefaultView());
 
-        crosshairShader.setUniform("background", fullscreenQuad.getTexture());
-        //window.draw(crosshair, &crosshairShader);
         window.draw(particle_Text);
         window.draw(fps_Text);
         window.draw(tps_Text);

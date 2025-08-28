@@ -149,6 +149,7 @@ void Physics::updateParticles(std::vector<Particle> &particles, float time){
 
     // calculate all forces using threads
     if (!threadRunning.load()) return;
+
     calculateForces();
 
     // update all velocities

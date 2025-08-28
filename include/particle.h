@@ -28,6 +28,8 @@ class Particle
         void setMass(float mass);
         void setspeed(float x, float y);
 
+        void setAcceleration(float x, float y);
+
         float mass;
         float density;
         float width;

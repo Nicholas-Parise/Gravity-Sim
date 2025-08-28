@@ -1,9 +1,7 @@
 #include "Node.h"
 #include "Configuration.h"
 #include <cmath>
-#include <iostream>
-
-size_t forceCalls = 0;
+//#include <iostream>
 
 Node::~Node()
 {
@@ -94,8 +92,6 @@ void Node::computeForce(Particle* p, sf::Vector2f& totalForce) {
     if (isLeaf() || s2 < dist2 * conf::theta * conf::theta) {
         float invDist = 1.0f / std::sqrt(dist2); // save 3 divisions by pre computing this value
         float F = (conf::G * totalMass * p->mass) * (invDist * invDist * invDist);
-
-        forceCalls++;
 
         // normalize vector to be in correct direction
         // we save one multiply by multiplying our force by invDist^3 instead of invDist^2
